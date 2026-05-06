@@ -1,31 +1,84 @@
-# 深度強化學習 (HW3) 綜合理解報告
+# 0513DRL_HW3: Deep Reinforcement Learning - DQN and Variants
 
-本專案包含了 Deep Q-Network (DQN) 及其變體的實作，應用於 Grid World 環境。
-
-## 1. 基礎 DQN 與 Experience Replay 的核心作用
-在基礎 DQN 的訓練中，我們使用神經網路來取代傳統的 Q-Table。然而，如果 Agent 直接使用連續收集到的經驗進行訓練，會因為資料的高度時間相關性 (Temporal Correlation) 導致網路陷入過擬合與災難性遺忘。
-
-**Experience Replay** 透過建立一個固定容量的 Buffer 儲存歷史經驗，並在訓練時隨機抽樣 (Random Sampling) 一批資料來更新網路。這打破了資料的時序相關性，穩定了神經網路的收斂，並大幅提升了資料的使用效率。
+This repository contains the implementation of Deep Q-Networks (DQN) and several of its advanced variants, applied to a Gridworld environment.
 
 ---
 
-## 2. 變體分析：Double DQN 與 Dueling DQN
+### ❓ Q1: HW3-1 Naive DQN for static mode
+**Task:** Run the provided code naive or Experience buffer reply. Submit a short understanding report.
 
-在 `player` 模式中（起點隨機），傳統 DQN 容易面臨 Q 值高估 (Overestimation) 的問題。
-
-![Double vs Dueling DQN Comparison](hw3_2_comparison.png)
-
-*   **Double DQN (DDQN)**：透過解耦「動作選擇」與「價值評估」的網路，使用 Main Network 選擇最佳動作，再由 Target Network 計算 Q 值。這有效抑制了過度樂觀的預期，使收斂曲線更為平穩。
-*   **Dueling DQN**：將網路層級的 Q 值拆分為「狀態價值 $V(s)$」與「動作優勢 $A(s,a)$」。在起點隨機的網格中，這種架構能極快地建立對全圖的價值認知，展現出極強的泛化能力。從上圖可見，兩者皆能順利收斂至理論高分。
+**💡 Understanding Report:**
+In `static` mode, all objects are fixed.
+- **Naive DQN:** Trains strictly online. Since consecutive frames are highly correlated, the learning process oscillates heavily and struggles to stabilize.
+- **Experience Replay:** Solves instability by storing past experiences in a buffer and sampling mini-batches randomly. This breaks temporal correlation, drastically improving the smoothness and convergence of the learning curve.
 
 ---
 
-## 3. 框架優勢：PyTorch Lightning 與訓練技巧
+### ❓ Q2: HW3-2 Enhanced DQN Variants for player mode
+**Task:** Implement and compare Double DQN and Dueling DQN. Focus on how they improve upon the basic DQN approach.
 
-在 `random` 模式（所有物件位置皆隨機）下，狀態空間極其龐大（超過四萬種配置）。
+**💡 Improvements Explanation:**
+- **Double DQN:** Basic DQN suffers from overestimation bias because it uses the same network to select and evaluate actions. Double DQN decouples this: it uses the Main Network to select the action and the Target Network to evaluate it, yielding more accurate Q-values.
+- **Dueling DQN:** Splits the network into a Value stream (how good the state is generally) and an Advantage stream (how much better an action is compared to others). This allows the network to learn which states are valuable without having to learn the effect of each action for every single state.
 
-![Training Loss](hw3_3_loss.png)
+**📊 Results:**
+| Double DQN vs Dueling DQN |
+|:---:|
+| ![Comparison](hw3_2_comparison.png) |
 
-*   **PyTorch Lightning**：模組化的框架使我們能輕鬆管理複雜的訓練迴圈與記錄，內建的 `CSVLogger` 幫助我們輕鬆畫出平滑的訓練 Loss 曲線（如上圖）。
-*   **Gradient Clipping (梯度裁剪)**：在隨機配置下，Agent 偶爾會遭遇極端狀態（如出生即陷阱），這會產生巨大的 Loss。引入梯度裁剪 (`norm=1.0`) 強制將異常梯度限制在安全範圍內，是確保長期訓練不崩潰的防護網。
-*   **AdamW 與 Learning Rate Scheduler**：配合權重衰減預防過擬合，並使用 StepLR 在後期降低學習率進行精細微調，成功讓模型在複雜隨機環境中找到最佳策略。
+---
+
+### ❓ Q3: HW3-3 Enhance DQN for random mode WITH Training Tips
+**Task:** Convert the DQN model from PyTorch to either Keras or PyTorch Lightning. Bonus points for integrating training techniques to stabilize/improve learning.
+
+**💡 Implementation & Tips:**
+We converted the model to **PyTorch Lightning** (`LitDQN` class) for the hardest `random` environment. To stabilize training in this chaotic mode, we integrated:
+- 📉 **Learning Rate Scheduling:** Added `StepLR` to gradually decay the learning rate, helping the model fine-tune its policy as it converges.
+- ✂️ **Gradient Clipping:** Set `gradient_clip_val=1.0` in the Trainer to ensure updates remain within a stable bound and prevent exploding gradients when rewards fluctuate wildly.
+- 🏋️ **AdamW Optimizer:** Introduced weight decay (L2 regularization) to prevent overfitting to specific random map configurations.
+- 📦 **Large Replay Buffer:** Increased capacity to 10,000 to avoid forgetting rare configurations.
+
+**📊 Results:**
+| PyTorch Lightning Training Loss |
+|:---:|
+| ![Training Loss](hw3_3_loss.png) |
+
+**Result Summary:**
+The PyTorch Lightning model successfully encapsulated the training loop. By applying these tips, the model managed to converge effectively in the `random` environment where all objects (Player, Goal, Pit, Wall) spawn arbitrarily.
+
+---
+
+## 🛠 Setup & Requirements
+To run the scripts locally, make sure you have the following Python packages installed:
+```bash
+pip install torch torchvision pytorch-lightning matplotlib numpy pandas
+```
+
+## 🏃 How to Run
+```bash
+# Run Basic DQN & Experience Replay
+python hw3_1_dqn.py
+
+# Run Double DQN & Dueling DQN
+python hw3_2_variants.py
+
+# Run PyTorch Lightning DQN
+python hw3_3_lightning.py
+```
+
+---
+
+## 💬 Development Log & Interaction Process
+**How we arrived at these results step-by-step:**
+
+- ❓ **Step 1: Analyzing the Assignment**
+  The process began by reviewing the homework instructions for HW3-1, HW3-2, and HW3-3.
+
+- 💻 **Step 2: Step-by-Step Implementation**
+  We systematically built the models in three separate Python scripts:
+  - **HW3-1:** `hw3_1_dqn.py` (Basic DQN with Experience Replay in static mode)
+  - **HW3-2:** `hw3_2_variants.py` (Double DQN vs Dueling DQN in player mode)
+  - **HW3-3:** `hw3_3_lightning.py` (PyTorch Lightning with LR Scheduler, Gradient Clipping in random mode)
+
+- 📊 **Step 3: Generating Results & Documentation**
+  Finally, we wrote automated scripts to plot loss and reward curves, generated this comprehensive `README.md`, and constructed a dynamic webpage (`index.html`) to visually present the project.
