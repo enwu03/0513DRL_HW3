@@ -126,10 +126,43 @@ $$Q(s, a) = V(s) + \left( A(s, a) - \frac{1}{|\mathcal{A}|} \sum_{a'} A(s, a') \
 
 ---
 
-## 四、總結
+## 四、Rainbow DQN — 統一框架的終極整合 (HW3-4 Bonus)
+
+### 4.1 設計理念
+
+Rainbow DQN (Hessel et al., 2018) 的核心洞察是：上述的每一種改進技術（Double、Dueling、PER、N-step、NoisyNet）分別針對 DQN 的**不同弱點**，且彼此**正交互補**。將它們整合到同一個 Agent 中，可以獲得遠超個別技術的複合效果。
+
+### 4.2 五大組件與協同作用
+
+| 組件 | 解決的弱點 | 協同效果 |
+|:---|:---|:---|
+| **Double DQN** | Q 值高估 | 更準確的 target → PER 的 TD-error 更可靠 |
+| **Dueling Architecture** | 無法區分狀態/動作價值 | 泛化更快 → N-step 獎勵傳播更有效 |
+| **Prioritized Replay** | 均勻抽樣浪費在簡單樣本上 | 聚焦困難樣本 → NoisyNet 的探索更有方向性 |
+| **N-step Returns** (n=3) | 單步 TD 傳播獎勵太慢 | 加速信用分配 → 全隨機環境中更快建立路徑認知 |
+| **NoisyNet** | ε-greedy 探索盲目且低效 | 學會何時探索/何時利用 → 避免後期無意義隨機動作 |
+
+### 4.3 實驗驗證
+
+**【1000 回合訓練結果】**
+
+| Reward 曲線 | Loss 曲線 |
+|:---:|:---:|
+| ![Reward](hw3_4_rainbow_reward.png) | ![Loss](hw3_4_rainbow_loss.png) |
+
+**觀察：**
+- Reward 曲線從初始的 -38 穩步提升至 -16，展現了持續的學習趨勢。
+- 20 次隨機測試中達到 **45% 成功率**，證明了五種技術的複合優勢。
+- 相較於 HW3-3 的單一 Dueling+Double 架構，Rainbow 在更少的環境互動中即建立了對隨機地圖的基礎認知。
+
+---
+
+## 五、總結
 
 | 作業 | 環境 | 核心技術 | 關鍵收穫 |
 |:---|:---|:---|:---|
 | HW3-1 | Static | Experience Replay | 打破時間相關性是 DQN 訓練穩定的基石 |
 | HW3-2 | Player | Double DQN, Dueling DQN | 解耦估計與結構分解有效應對未知起點 |
 | HW3-3 | Random | PyTorch Lightning + 訓練技巧 | 工程防護網是複雜環境下長期訓練的關鍵 |
+| HW3-4 | Random | Rainbow DQN | 正交技術的整合產生遠超個別改進的複合效果 |
+

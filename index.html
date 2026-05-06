@@ -168,6 +168,28 @@
                 <li><p><strong>大容量 Replay Buffer</strong>：將容量擴增至 10000，防止 Agent 在龐大的空間中遺忘罕見的配置。</p></li>
             </ul>
         </div>
+
+        <!-- HW3-4 (Bonus) -->
+        <div class="card">
+            <div class="tag-container">
+                <span class="tag" style="color: #a78bfa;">Random Mode</span>
+                <span class="tag">Rainbow DQN</span>
+                <span class="tag">Bonus</span>
+            </div>
+            <h2>Rainbow DQN — 五大技術的終極整合</h2>
+            <p>Rainbow DQN 將 <strong>Double DQN</strong>、<strong>Dueling Architecture</strong>、<strong>Prioritized Replay</strong>、<strong>N-step Returns</strong> 和 <strong>NoisyNet</strong> 五種正交改進整合為單一 Agent。</p>
+            <div style="display: flex; gap: 1rem; margin-top: 1rem; margin-bottom: 1rem;">
+                <div style="flex: 1; text-align: center;">
+                    <img src="hw3_4_rainbow_reward.png" alt="Rainbow Reward" style="margin-bottom: 0.5rem;">
+                    <p style="font-size: 0.9rem; margin-top: 0;">Reward 持續提升</p>
+                </div>
+                <div style="flex: 1; text-align: center;">
+                    <img src="hw3_4_rainbow_loss.png" alt="Rainbow Loss" style="margin-bottom: 0.5rem;">
+                    <p style="font-size: 0.9rem; margin-top: 0;">Loss 穩定下降</p>
+                </div>
+            </div>
+            <p><strong>NoisyNet</strong> 取代了傳統的 ε-greedy，讓網路自行學習何時探索、何時利用；<strong>Prioritized Replay</strong> 聚焦於困難轉移；<strong>N-step Returns</strong> 加速獎勵傳播。20 次測試達到 <span class="highlight">45% 成功率</span>。</p>
+        </div>
     </div>
 </body>
 </html>

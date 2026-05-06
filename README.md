@@ -1,6 +1,6 @@
 # 🎮 0513DRL\_HW3: Deep Reinforcement Learning — DQN and Variants
 
-This repository contains the implementation of **Deep Q-Networks (DQN)** and its advanced variants — **Double DQN** and **Dueling DQN** — applied to a 4×4 Gridworld environment across three difficulty levels.
+This repository contains the implementation of **Deep Q-Networks (DQN)** and its advanced variants — **Double DQN**, **Dueling DQN**, and **Rainbow DQN** — applied to a 4×4 Gridworld environment across three difficulty levels.
 
 > **Environment Modes Overview**
 >
@@ -111,6 +111,34 @@ To stabilize training in the chaotic `random` environment (43,680+ unique config
 
 ---
 
+## 🌈 Q4 — HW3-4 (Bonus): Rainbow DQN for Random Mode
+
+**Task:** Integrate multiple DQN improvements into a unified Rainbow agent for the hardest `random` environment.
+
+### 💡 Rainbow DQN — The Best of All Worlds
+
+Rainbow DQN (Hessel et al., 2018) combines **5 orthogonal improvements** into a single agent:
+
+| Component | What It Does | Replaces |
+|:---|:---|:---|
+| 🎯 **Double DQN** | Decouples action selection/evaluation | Biased max-Q estimation |
+| 🏗️ **Dueling Architecture** | Separates V(s) and A(s,a) streams | Monolithic Q-network |
+| ⚡ **Prioritized Replay** | Samples high-error transitions more often | Uniform random sampling |
+| 🔗 **N-step Returns** (n=3) | $R = \sum_{i=0}^{n-1} \gamma^i r_i + \gamma^n Q(s_n)$ | Single-step TD target |
+| 🎲 **NoisyNet** | Learned exploration noise in network weights | Fixed ε-greedy schedule |
+
+**Key insight:** Each technique addresses a *different* weakness of vanilla DQN. When combined, their benefits compound — the agent explores smarter (NoisyNet), learns faster from failures (PER + N-step), estimates more accurately (Double), and generalizes better (Dueling).
+
+### 📊 Results — 1000-Episode Training
+
+| Reward Curve | Loss Curve |
+|:---:|:---:|
+| ![Reward](hw3_4_rainbow_reward.png) | ![Loss](hw3_4_rainbow_loss.png) |
+
+> The reward curve shows steady improvement from -38 to -16 over 1000 episodes. The 20-round test achieved a **45% success rate** in the fully randomized environment — demonstrating that Rainbow's compound improvements provide meaningful gains over individual techniques.
+
+---
+
 ## 🛠 Setup & Requirements
 
 ```bash
@@ -128,6 +156,9 @@ python hw3_2_variants.py
 
 # HW3-3: PyTorch Lightning DQN (random mode)
 python hw3_3_lightning.py
+
+# HW3-4 (Bonus): Rainbow DQN (random mode)
+python hw3_4_rainbow.py
 ```
 
 ---
@@ -140,4 +171,5 @@ python hw3_3_lightning.py
 | **2. HW3-1** | Implemented `hw3_1_dqn.py` with both Naive and ER training loops in `static` mode. Generated comparative loss plots. |
 | **3. HW3-2** | Built `hw3_2_variants.py` with `StandardNet` (Double) and `DuelingNet` architectures. Ran 500-episode head-to-head comparison in `player` mode. |
 | **4. HW3-3** | Refactored into `hw3_3_lightning.py` using `pl.LightningModule`. Integrated gradient clipping, LR scheduling, AdamW, and a large replay buffer for `random` mode. |
-| **5. Documentation** | Generated all result plots, wrote this README, an understanding report, and built an interactive HTML presentation (`index.html`). |
+| **5. HW3-4** | Implemented `hw3_4_rainbow.py` combining Double, Dueling, PER, N-step, and NoisyNet into a unified Rainbow agent for `random` mode. |
+| **6. Documentation** | Generated all result plots, wrote this README, an understanding report, and built an interactive HTML presentation (`index.html`). |
