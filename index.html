@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深度強化學習 HW3 實驗報告</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #ec4899;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface-hover: #334155;
+            --text: #f8fafc;
+            --text-muted: #cbd5e1;
+        }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            line-height: 1.7;
+        }
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 5rem 2rem;
+            text-align: center;
+            clip-path: polygon(0 0, 100% 0, 100% 90%, 0 100%);
+        }
+        h1 { margin: 0; font-size: 3rem; letter-spacing: -0.05em; font-weight: 800; }
+        p.subtitle { opacity: 0.95; font-size: 1.25rem; font-weight: 600; margin-top: 1rem; }
+        .container {
+            max-width: 900px;
+            margin: -3rem auto 4rem;
+            padding: 0 1.5rem;
+            position: relative;
+            z-index: 10;
+        }
+        .card {
+            background: var(--surface);
+            border-radius: 1.25rem;
+            padding: 2.5rem;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(79, 70, 229, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        h2 { 
+            color: #fff; 
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0;
+        }
+        h2::before {
+            content: '';
+            display: block;
+            width: 8px;
+            height: 28px;
+            background: linear-gradient(to bottom, var(--primary), var(--secondary));
+            border-radius: 4px;
+        }
+        p { color: var(--text-muted); font-size: 1.05rem; }
+        strong { color: #fff; }
+        img { 
+            max-width: 100%; 
+            border-radius: 0.75rem; 
+            margin: 1.5rem 0;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease;
+        }
+        img:hover { transform: scale(1.02); }
+        .highlight {
+            background: rgba(79, 70, 229, 0.2);
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            color: #c7d2fe;
+            font-weight: 600;
+        }
+        .tag-container { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+        .tag {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .btn-github {
+            display: inline-block;
+            background: #fff;
+            color: #0f172a;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            margin-top: 1rem;
+            transition: background 0.2s ease;
+        }
+        .btn-github:hover { background: #e2e8f0; }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <h1>DRL Assignment 3</h1>
+        <p class="subtitle">深度強化學習：DQN 變體與穩定訓練實作</p>
+        <a href="https://github.com/enwu03/0513DRL_HW3" class="btn-github">檢視 GitHub 專案</a>
+    </header>
+
+    <div class="container">
+        <!-- HW3-1 -->
+        <div class="card">
+            <div class="tag-container">
+                <span class="tag" style="color: #60a5fa;">Static Mode</span>
+                <span class="tag">Basic DQN</span>
+            </div>
+            <h2>基礎 DQN 與 Experience Replay</h2>
+            <p>在基礎 DQN 的訓練中，直接使用連續收集到的經驗進行訓練，會因為資料的高度<strong>時間相關性 (Temporal Correlation)</strong> 導致網路陷入過擬合與災難性遺忘。</p>
+            <p><span class="highlight">Experience Replay (經驗回放)</span> 透過建立一個固定容量的 Buffer 儲存歷史經驗，並在訓練時隨機抽樣。這打破了資料的時序相關性，穩定了神經網路的收斂，並大幅提升了資料的使用效率。</p>
+        </div>
+
+        <!-- HW3-2 -->
+        <div class="card">
+            <div class="tag-container">
+                <span class="tag" style="color: #f472b6;">Player Mode</span>
+                <span class="tag">Double DQN</span>
+                <span class="tag">Dueling DQN</span>
+            </div>
+            <h2>變體對比：Double vs Dueling DQN</h2>
+            <p>在起點隨機的環境中，傳統 DQN 容易面臨 <strong>Q 值高估 (Overestimation)</strong> 的致命問題。我們實作了兩種主流改良變體進行了 500 回合的對比測試：</p>
+            <img src="hw3_2_comparison.png" alt="Double DQN 與 Dueling DQN 效能對比圖">
+            <p><strong>1. Double DQN (DDQN)</strong>：透過解耦「動作選擇」與「價值評估」的網路，使用 Main Network 選擇最佳動作，再由 Target Network 計算 Q 值。有效抑制了過度樂觀的預期。</p>
+            <p><strong>2. Dueling DQN</strong>：將網路層級拆分為「狀態價值 V(s)」與「動作優勢 A(s,a)」。在起點隨機的網格中，能極快地建立對全圖的安全價值認知，展現出優越的<strong>泛化能力</strong>。</p>
+        </div>
+
+        <!-- HW3-3 -->
+        <div class="card">
+            <div class="tag-container">
+                <span class="tag" style="color: #fbbf24;">Random Mode</span>
+                <span class="tag">PyTorch Lightning</span>
+                <span class="tag">Gradient Clipping</span>
+            </div>
+            <h2>全隨機環境的穩定訓練挑戰</h2>
+            <p>在所有物件位置皆隨機的模式下，狀態空間極其龐大（超過 43,680 種配置），環境的極高不確定性對訓練的穩定性構成嚴峻挑戰。</p>
+            <img src="hw3_3_loss.png" alt="PyTorch Lightning 訓練 Loss 曲線">
+            <p>我們採用了 <span class="highlight">PyTorch Lightning</span> 框架進行模組化重構，並整合了以下關鍵技術確保收斂：</p>
+            <ul>
+                <li><p><strong>Gradient Clipping (梯度裁剪)</strong>：在隨機配置下，Agent 偶爾會遭遇極端狀態（如出生即死亡），這會產生巨大的誤差。梯度裁剪強制將異常梯度限制在安全範圍內，是確保長期訓練不崩潰的防護網。</p></li>
+                <li><p><strong>AdamW 與 StepLR</strong>：配合權重衰減預防過擬合，並在後期動態降低學習率進行精細微調。</p></li>
+                <li><p><strong>大容量 Replay Buffer</strong>：將容量擴增至 10000，防止 Agent 在龐大的空間中遺忘罕見的配置。</p></li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
