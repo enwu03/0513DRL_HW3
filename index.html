@@ -124,6 +124,16 @@
             </div>
             <h2>基礎 DQN 與 Experience Replay</h2>
             <p>在基礎 DQN 的訓練中，直接使用連續收集到的經驗進行訓練，會因為資料的高度<strong>時間相關性 (Temporal Correlation)</strong> 導致網路陷入過擬合與災難性遺忘。</p>
+            <div style="display: flex; gap: 1rem; margin-top: 1rem; margin-bottom: 1rem;">
+                <div style="flex: 1; text-align: center;">
+                    <img src="naive_dqn_loss.png" alt="Naive DQN Loss" style="margin-bottom: 0.5rem;">
+                    <p style="font-size: 0.9rem; margin-top: 0;">Naive DQN (震盪劇烈)</p>
+                </div>
+                <div style="flex: 1; text-align: center;">
+                    <img src="er_dqn_loss.png" alt="ER DQN Loss" style="margin-bottom: 0.5rem;">
+                    <p style="font-size: 0.9rem; margin-top: 0;">Experience Replay (收斂平穩)</p>
+                </div>
+            </div>
             <p><span class="highlight">Experience Replay (經驗回放)</span> 透過建立一個固定容量的 Buffer 儲存歷史經驗，並在訓練時隨機抽樣。這打破了資料的時序相關性，穩定了神經網路的收斂，並大幅提升了資料的使用效率。</p>
         </div>
 

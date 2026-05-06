@@ -12,6 +12,11 @@ In `static` mode, all objects are fixed.
 - **Naive DQN:** Trains strictly online. Since consecutive frames are highly correlated, the learning process oscillates heavily and struggles to stabilize.
 - **Experience Replay:** Solves instability by storing past experiences in a buffer and sampling mini-batches randomly. This breaks temporal correlation, drastically improving the smoothness and convergence of the learning curve.
 
+**📊 Results:**
+| Naive DQN Loss | Experience Replay DQN Loss |
+|:---:|:---:|
+| ![Naive DQN Loss](naive_dqn_loss.png) | ![ER DQN Loss](er_dqn_loss.png) |
+
 ---
 
 ### ❓ Q2: HW3-2 Enhanced DQN Variants for player mode
