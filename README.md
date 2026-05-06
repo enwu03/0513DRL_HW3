@@ -15,7 +15,7 @@ In `static` mode, all objects are fixed.
 **📊 Results:**
 | Naive DQN Loss | Experience Replay DQN Loss |
 |:---:|:---:|
-| ![Naive DQN Loss](naive_dqn_loss.png) | ![ER DQN Loss](er_dqn_loss.png) |
+| ![Naive DQN Loss](hw3_1_naive_dqn_loss.png) | ![ER DQN Loss](hw3_1_er_dqn_loss.png) |
 
 ---
 
