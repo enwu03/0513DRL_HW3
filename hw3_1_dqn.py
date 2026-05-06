@@ -1,3 +1,11 @@
+"""
+HW3-1: Naive DQN for Static Mode
+Based on the Gridworld environment from:
+https://github.com/DeepReinforcementLearning/DeepReinforcementLearningInAction/tree/master/Chapter%203
+
+This script implements both Naive (online) DQN and Experience Replay DQN
+using the original Gridworld.py and GridBoard.py from the textbook repo.
+"""
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -6,54 +14,14 @@ import random
 from collections import deque
 import matplotlib.pyplot as plt
 import pandas as pd
+import copy
 
-# 1. Environment Definition (Static Mode)
-class StaticGridEnv:
-    def __init__(self):
-        self.rows = 4
-        self.cols = 4
-        self.start = (0, 3)
-        self.goal = (0, 0)
-        self.pit = (0, 1)
-        self.wall = (1, 1)
-        self.reset()
+# Import the original Gridworld environment from the DRL in Action repo
+from Gridworld import Gridworld
 
-    def reset(self):
-        self.player = list(self.start)
-        self.steps = 0
-        return self._get_state()
-
-    def _get_state(self):
-        state = np.zeros(self.rows * self.cols, dtype=np.float32)
-        idx = self.player[0] * self.cols + self.player[1]
-        state[idx] = 1.0
-        return state
-
-    def step(self, action):
-        self.steps += 1
-        dx = [-1, 1, 0, 0]
-        dy = [0, 0, -1, 1]
-        
-        new_x = self.player[0] + dx[action]
-        new_y = self.player[1] + dy[action]
-        
-        if new_x < 0 or new_x >= self.rows or new_y < 0 or new_y >= self.cols:
-            new_x, new_y = self.player[0], self.player[1]
-        if (new_x, new_y) == self.wall:
-            new_x, new_y = self.player[0], self.player[1]
-            
-        self.player = [new_x, new_y]
-        state = self._get_state()
-        
-        if tuple(self.player) == self.goal:
-            return state, 10.0, True
-        elif tuple(self.player) == self.pit:
-            return state, -10.0, True
-        elif self.steps >= 50:
-            return state, -1.0, True
-        else:
-            return state, -1.0, False
-
+# ============================================================
+# 1. Experience Replay Buffer
+# ============================================================
 class ReplayBuffer:
     def __init__(self, capacity):
         self.buffer = deque(maxlen=capacity)
@@ -69,38 +37,65 @@ class ReplayBuffer:
     def __len__(self):
         return len(self.buffer)
 
+# ============================================================
+# 2. DQN Neural Network
+# ============================================================
 class DQN(nn.Module):
     def __init__(self, input_dim, output_dim):
         super(DQN, self).__init__()
         self.net = nn.Sequential(
-            nn.Linear(input_dim, 64),
+            nn.Linear(input_dim, 150),
             nn.ReLU(),
-            nn.Linear(64, output_dim)
+            nn.Linear(150, 100),
+            nn.ReLU(),
+            nn.Linear(100, output_dim)
         )
     def forward(self, x):
         return self.net(x)
 
+# ============================================================
+# 3. Helper: get state from the original Gridworld object
+# ============================================================
+action_set = {0: 'u', 1: 'd', 2: 'l', 3: 'r'}
+
+def get_state(game):
+    """
+    Extract the state from the Gridworld object as a flattened numpy array.
+    Uses board.render_np() which returns a 4-channel (Player, Goal, Pit, Wall) 
+    representation, matching the textbook's approach.
+    """
+    state = game.board.render_np().reshape(1, 64) + np.random.rand(1, 64) / 100.0
+    return state.flatten().astype(np.float32)
+
+# ============================================================
+# 4. Training function
+# ============================================================
 def train_agent(use_replay=True, episodes=500):
-    env = StaticGridEnv()
-    model = DQN(16, 4)
-    optimizer = optim.Adam(model.parameters(), lr=0.005)
-    loss_fn = nn.MSELoss()
-    
-    buffer = ReplayBuffer(2000)
-    batch_size = 32 if use_replay else 1
-    gamma = 0.99
+    gamma = 0.9
     epsilon = 1.0
     epsilon_min = 0.01
     epsilon_decay = 0.99
     
+    model = DQN(64, 4)
+    loss_fn = nn.MSELoss()
+    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    
+    buffer = ReplayBuffer(1000)
+    batch_size = 200 if use_replay else 1
+    
     loss_history = []
-    print(f"\nStarting Training (Static Mode) | Replay Buffer: {use_replay}")
+    mode_name = "Experience Replay" if use_replay else "Naive (Online)"
+    print(f"\nStarting Training (Static Mode) | Mode: {mode_name}")
     
     for episode in range(1, episodes + 1):
-        state = env.reset()
+        game = Gridworld(size=4, mode='static')
+        state = get_state(game)
         done = False
+        steps = 0
         
         while not done:
+            steps += 1
+            # Epsilon-greedy action selection
             if random.random() < epsilon:
                 action = random.randint(0, 3)
             else:
@@ -108,11 +103,21 @@ def train_agent(use_replay=True, episodes=500):
                 with torch.no_grad():
                     q_values = model(state_t)
                 action = q_values.argmax().item()
-                
-            next_state, reward, done = env.step(action)
+            
+            # Take action using the original Gridworld's makeMove
+            game.makeMove(action_set[action])
+            next_state = get_state(game)
+            reward = game.reward()
+            
+            # Check terminal conditions
+            if reward != -1:  # Hit goal (+10) or pit (-10)
+                done = True
+            elif steps >= 50:  # Timeout
+                done = True
             
             if use_replay:
-                buffer.push(state, action, reward, next_state, done)
+                # --- Experience Replay Mode ---
+                buffer.push(state, action, reward, next_state, float(done))
                 if len(buffer) >= batch_size:
                     s, a, r, ns, d = buffer.sample(batch_size)
                     s = torch.FloatTensor(s)
@@ -125,36 +130,40 @@ def train_agent(use_replay=True, episodes=500):
                     with torch.no_grad():
                         next_q_values = model(ns).max(1)[0].unsqueeze(1)
                         target_q = r + gamma * next_q_values * (1 - d)
-                        
+                    
                     loss = loss_fn(q_values, target_q)
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
                     loss_history.append(loss.item())
             else:
-                # Naive Online Learning (batch size 1 directly from transition)
+                # --- Naive (Online) Mode ---
                 s = torch.FloatTensor(state).unsqueeze(0)
                 a = torch.LongTensor([[action]])
-                r = torch.FloatTensor([[reward]])
+                r_t = torch.FloatTensor([[reward]])
                 ns = torch.FloatTensor(next_state).unsqueeze(0)
-                d = torch.FloatTensor([[done]])
+                d_t = torch.FloatTensor([[float(done)]])
                 
                 q_values = model(s).gather(1, a)
                 with torch.no_grad():
                     next_q_values = model(ns).max(1)[0].unsqueeze(1)
-                    target_q = r + gamma * next_q_values * (1 - d)
-                    
+                    target_q = r_t + gamma * next_q_values * (1 - d_t)
+                
                 loss = loss_fn(q_values, target_q)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
                 loss_history.append(loss.item())
-                
+            
             state = next_state
+            
         epsilon = max(epsilon_min, epsilon * epsilon_decay)
         
     return loss_history
 
+# ============================================================
+# 5. Smoothing and Plotting
+# ============================================================
 def smooth(data, window=50):
     return pd.Series(data).rolling(window=window).mean()
 
@@ -167,7 +176,7 @@ if __name__ == '__main__':
     plt.xlabel('Training Steps')
     plt.ylabel('Loss')
     plt.grid(True, linestyle='--', alpha=0.6)
-    plt.savefig('naive_dqn_loss.png')
+    plt.savefig('hw3_1_naive_dqn_loss.png')
     plt.close()
     
     # 2. Train ER DQN (With Replay Buffer)
@@ -178,7 +187,7 @@ if __name__ == '__main__':
     plt.xlabel('Training Steps')
     plt.ylabel('Loss')
     plt.grid(True, linestyle='--', alpha=0.6)
-    plt.savefig('er_dqn_loss.png')
+    plt.savefig('hw3_1_er_dqn_loss.png')
     plt.close()
     
-    print("Saved naive_dqn_loss.png and er_dqn_loss.png")
+    print("\nSaved hw3_1_naive_dqn_loss.png and hw3_1_er_dqn_loss.png")
